@@ -10,10 +10,9 @@
 #include <stdio.h>                      // printf
 #include <string.h>                     // memset
 
-#include "kbase/kMacros.h"              // K_FT, et al
+#include "corBase/corMacros.h"          // COR_FT, et al
 #include <stdbool.h>                         // bool
-#include "kbase/kFloatTrim.h"           // kFloatTrim
-#include "kbase/kLibLog.h"              // K Log macros
+#include "corBase/corFloatTrim.h"       // corFloatTrim
 
 #include "corAlloc/corAlloc.h"          // corAlloc
 #include "corJson/corJsonTraceLevels.h"        // Trace Levels for the kjson library
@@ -260,7 +259,7 @@ do {                                             \
 //
 #define pushFloat(bP, f)                                       \
 do {                                                           \
-  kFloatTrim(&bP->buf[bP->bytesUsed], f);                     \
+  corFloatTrim(&bP->buf[bP->bytesUsed], f);                   \
   bP->bytesUsed += strlen(&bP->buf[bP->bytesUsed]);           \
 } while (0)
 
@@ -312,7 +311,7 @@ static int renderedSize2(CorNode* nodeP, bool inVec)
   {
     char cv[64];
 
-    kFloatTrim(cv, nodeP->value.f);
+    corFloatTrim(cv, nodeP->value.f);
     return extra + strlen(cv);
   }
   else if (nodeP->type == CorString)
