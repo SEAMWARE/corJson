@@ -109,11 +109,11 @@ static void renderSize(CorJson* corJsonP, CorNode* nodeP, int* accumulatedSizeP,
 
     *accumulatedSizeP += 1;  // '{'
 
-    if (nodeP->value.firstChildP != NULL)
+    if (nodeP->value.head != NULL)
     {
       *accumulatedSizeP += strlen(corJsonP->nlString);
 
-      CorNode* nP = nodeP->value.firstChildP;
+      CorNode* nP = nodeP->value.head;
 
       while (nP != NULL)
       {
@@ -147,11 +147,11 @@ static void renderSize(CorJson* corJsonP, CorNode* nodeP, int* accumulatedSizeP,
 
     *accumulatedSizeP += 1;  // '['
 
-    if (nodeP->value.firstChildP != NULL)
+    if (nodeP->value.head != NULL)
     {
       *accumulatedSizeP += strlen(corJsonP->nlString);
 
-      CorNode* nP      = nodeP->value.firstChildP;
+      CorNode* nP      = nodeP->value.head;
 
       while (nP != NULL)
       {
@@ -256,13 +256,13 @@ int corJsonRenderSize(CorJson* corJsonP, CorNode* nodeP)
     return accumulatedSize;
   }
 
-  CorNode* childP = nodeP->value.firstChildP;
+  CorNode* childP = nodeP->value.head;
   bool   isVec  = (nodeP->type == CorArray)? true : false;
 
   ++accumulatedSize;  // Either '{' or '['
 
   // If children, a newline is appended after the initial '[' or '{'
-  if (nodeP->value.firstChildP != NULL)
+  if (nodeP->value.head != NULL)
     accumulatedSize += strlen(corJsonP->nlString);
 
   while (childP != NULL)
@@ -272,7 +272,7 @@ int corJsonRenderSize(CorJson* corJsonP, CorNode* nodeP)
   }
 
   // If children, a newline is appended before the last ']' or '}'
-  if (nodeP->value.firstChildP != NULL)
+  if (nodeP->value.head != NULL)
     accumulatedSize += strlen(corJsonP->nlString);
 
   ++accumulatedSize;  // Either '}' or ']'
@@ -298,7 +298,7 @@ static void fastRenderSize(int* accumulatedSizeP, CorNode* nodeP, bool inVec)
   {
     *accumulatedSizeP += 2;  // '{' + '}'
 
-    CorNode* nP = nodeP->value.firstChildP;
+    CorNode* nP = nodeP->value.head;
     while (nP != NULL)
     {
       fastRenderSize(accumulatedSizeP, nP, false);
@@ -309,7 +309,7 @@ static void fastRenderSize(int* accumulatedSizeP, CorNode* nodeP, bool inVec)
   {
     *accumulatedSizeP += 2;  // '[' + ']'
 
-    CorNode* nP = nodeP->value.firstChildP;
+    CorNode* nP = nodeP->value.head;
     while (nP != NULL)
     {
       fastRenderSize(accumulatedSizeP, nP, true);
@@ -342,7 +342,7 @@ int corJsonFastRenderSize(CorNode* nodeP)
     return accumulatedSize;
   }
 
-  CorNode* childP = nodeP->value.firstChildP;
+  CorNode* childP = nodeP->value.head;
   bool   isVec  = (nodeP->type == CorArray)? true : false;
 
   accumulatedSize += 2;  // '{' or '['  +  '}' or ']'

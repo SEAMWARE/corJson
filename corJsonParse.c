@@ -807,15 +807,15 @@ static CorNode* corJsonParseMember(CorJson* corJsonP, CorNode* objectP)
 #ifdef COR_JSON_DOM_ON
   if (corJsonP->addF == NULL)  // FIXME: make addF point to corTreeChildAdd and stop doing "if (corJsonP->addF == NULL)"
   {
-    if (objectP->value.firstChildP != NULL)
+    if (objectP->value.head != NULL)
     {
-      objectP->lastChild->next = nodeP;
+      objectP->value.tail->next = nodeP;
     }
     else
-      objectP->value.firstChildP = nodeP;
+      objectP->value.head = nodeP;
 
     // new child is the last child
-    objectP->lastChild = nodeP;
+    objectP->value.tail = nodeP;
   }
   else
     corJsonP->addF(objectP, nodeP);
@@ -872,13 +872,13 @@ static CorNode* corJsonParseArrayMember(CorJson* corJsonP, CorNode* arrayP)
 
 #ifdef COR_JSON_DOM_ON
     // Add node to its container (arrayP)
-    if (arrayP->value.firstChildP != NULL)
-      arrayP->lastChild->next = nodeP;
+    if (arrayP->value.head != NULL)
+      arrayP->value.tail->next = nodeP;
     else
-      arrayP->value.firstChildP = nodeP;
+      arrayP->value.head = nodeP;
 
     // Point to the last child
-    arrayP->lastChild = nodeP;
+    arrayP->value.tail = nodeP;
 #endif
 
     CorJsonStatus s;
@@ -1063,8 +1063,8 @@ CorNode* corJsonParse(CorJson* corJsonP, char* json)
 #ifdef COR_JSON_DOM_ON
   corJsonP->tree              = top;
   top->next              = NULL;
-  top->value.firstChildP = NULL;
-  top->lastChild         = NULL;
+  top->value.head = NULL;
+  top->value.tail        = NULL;
 #endif
 
   corJsonP->json  = json;
