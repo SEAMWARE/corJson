@@ -10,7 +10,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 //
-#include "kalloc/KAlloc.h"              // KAlloc
+#include "corAlloc/CorAlloc.h"          // CorAlloc
 #include "corJson/CorJson.h"                // KJson
 
 
@@ -21,7 +21,7 @@
 //
 // The idea is for each thread to have its own CorJson buffer.
 //
-extern CorJson* corJsonCreate(CorJson* corJsonP, KAlloc* kaP);
+extern CorJson* corJsonCreate(CorJson* corJsonP, CorAlloc* kaP);
 
 #endif
 

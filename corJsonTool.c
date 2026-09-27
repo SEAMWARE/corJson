@@ -25,8 +25,8 @@
 #include <stdbool.h>                              // bool
 
 
-#include "kalloc/kaBufferInit.h"             // kaBufferInit
-#include "kalloc/kaBufferReset.h"            // kaBufferReset
+#include "corAlloc/corAllocBufferInit.h"     // corAllocBufferInit
+#include "corAlloc/corAllocBufferReset.h"    // corAllocBufferReset
 
 #include "corJson/corJsonTraceLevels.h"             // kjTraceLevelInfo
 #include "corJson/CorJson.h"                     // kjson library
@@ -650,10 +650,10 @@ int main(int argC, char* argV[])
     COR_RE(1, "corLogInit failed");
 
   CorJson  kjson;
-  KAlloc kalloc;
+  CorAlloc kalloc;
   CorJson* corJsonP;
 
-  kaBufferInit(&kalloc, kallocBuffer, sizeof(kallocBuffer), 16 * 1024, NULL, (char*) "KJSON Alloc Buffer");
+  corAllocBufferInit(&kalloc, kallocBuffer, sizeof(kallocBuffer), 16 * 1024, NULL, (char*) "KJSON Alloc Buffer");
 
   corJsonP = corJsonCreate(&kjson, &kalloc);
 
@@ -820,6 +820,6 @@ int main(int argC, char* argV[])
   else
     printf("%s\n", outputBuffer);
 
-  kaBufferReset(&kalloc, false);
+  corAllocBufferReset(&kalloc, false);
   return 0;
 }

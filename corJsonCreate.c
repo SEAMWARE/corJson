@@ -10,8 +10,8 @@
 #include <stdlib.h>                              // malloc, calloc, free
 #include <string.h>                              // memset
 #include "kbase/kLibLog.h"              // K Log macros
-#include "kalloc/KAlloc.h"              // KAlloc
-#include "kalloc/kaBufferInit.h"        // kaBufferInit
+#include "corAlloc/CorAlloc.h"          // CorAlloc
+#include "corAlloc/corAllocBufferInit.h"        // corAllocBufferInit
 
 #include "corJson/CorJson.h"                // KJson
 #include "corJson/CorJsonStatus.h"             // CorJsonStatus
@@ -28,7 +28,7 @@
 //
 // The idea is for each thread to have its own CorJson buffer.
 //
-CorJson* corJsonCreate(CorJson* corJsonP, KAlloc* kaP)
+CorJson* corJsonCreate(CorJson* corJsonP, CorAlloc* kaP)
 {
   if (corJsonP == NULL)
   {
@@ -42,7 +42,7 @@ CorJson* corJsonCreate(CorJson* corJsonP, KAlloc* kaP)
 
   if (kaP == NULL)
   {
-    char* buf = malloc(sizeof(KAlloc) + 1024 * 8);
+    char* buf = malloc(sizeof(CorAlloc) + 1024 * 8);
 
     if (buf == NULL)
     {
@@ -51,8 +51,8 @@ CorJson* corJsonCreate(CorJson* corJsonP, KAlloc* kaP)
       return NULL;
     }
 
-    kaP = (KAlloc*) buf;
-    kaBufferInit(kaP, &buf[sizeof(KAlloc)], 1024 * 8, 2048, NULL, "JSON Alloc Buffer");
+    kaP = (CorAlloc*) buf;
+    corAllocBufferInit(kaP, &buf[sizeof(CorAlloc)], 1024 * 8, 2048, NULL, "JSON Alloc Buffer");
   }
 
   corJsonP->kallocP = kaP;  // Its inital buffer should already be in place (in case pre-allocated)

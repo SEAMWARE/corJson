@@ -8,7 +8,7 @@ itself lives in corTree; this library only reads and writes JSON.
 - **Language:** C
 - **License:** [Apache License 2.0](LICENSE)
 
-The dependencies are **corTree, kalloc, corLog and kbase**.
+The dependencies are **corTree, corAlloc, corLog and kbase**.
 
 ## Where it comes from
 
@@ -21,7 +21,7 @@ substance (the builders take an allocator, not the parser's handle).
 
 ```c
 CorJson  corJson;
-CorJson* corJsonP = corJsonCreate(&corJson, &kalloc);    // parser state, over a KAlloc
+CorJson* corJsonP = corJsonCreate(&corJson, &kalloc);    // parser state, over a CorAlloc
 CorNode* treeP    = corJsonParse(corJsonP, buf);         // parses IN PLACE - buf is modified
 
 char out[4096];
