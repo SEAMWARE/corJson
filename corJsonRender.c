@@ -345,7 +345,7 @@ static int renderedSize(CorNode* nodeP)
 {
   bool isArray = (nodeP->type == CorArray)? true : false;
 
-  CorNode*  nP        = nodeP->value.firstChildP;
+  CorNode*  nP        = nodeP->value.head;
   int      totalSize = 2;  // Start and end brackets
 
   while (nP != NULL)
@@ -436,7 +436,7 @@ static void corJsonRender2(CorJson* corJsonP, RenderBuffer* rBufP, CorNode* node
 
       pushString(rBufP, "{ ");
 
-      CorNode* nP = nodeP->value.firstChildP;
+      CorNode* nP = nodeP->value.head;
       int     childNo = 0;  // childNo is for debugging only
 
       while (nP != NULL)
@@ -457,11 +457,11 @@ static void corJsonRender2(CorJson* corJsonP, RenderBuffer* rBufP, CorNode* node
     {
       pushChar(rBufP, '{');
 
-      if (nodeP->value.firstChildP != NULL)
+      if (nodeP->value.head != NULL)
       {
         pushString(rBufP, corJsonP->nlString);
 
-        CorNode* nP = nodeP->value.firstChildP;
+        CorNode* nP = nodeP->value.head;
         int     childNo = 0;  // childNo is for debugging only
 
         while (nP != NULL)
@@ -523,7 +523,7 @@ static void corJsonRender2(CorJson* corJsonP, RenderBuffer* rBufP, CorNode* node
 
       pushString(rBufP, "[ ");
 
-      CorNode* nP = nodeP->value.firstChildP;
+      CorNode* nP = nodeP->value.head;
       int     childNo = 0;  // childNo is for debugging only
 
       while (nP != NULL)
@@ -544,11 +544,11 @@ static void corJsonRender2(CorJson* corJsonP, RenderBuffer* rBufP, CorNode* node
     {
       pushChar(rBufP, '[');
 
-      if (nodeP->value.firstChildP != NULL)
+      if (nodeP->value.head != NULL)
       {
         pushString(rBufP, corJsonP->nlString);
 
-        CorNode* nP      = nodeP->value.firstChildP;
+        CorNode* nP      = nodeP->value.head;
         int     childNo = 0;  // childNo is for debugging only
 
         while (nP != NULL)
@@ -674,7 +674,7 @@ void corJsonRender(CorJson* corJsonP, CorNode* nodeP, char* buf)
     return;
   }
 
-  CorNode* childP = nodeP->value.firstChildP;
+  CorNode* childP = nodeP->value.head;
   bool   isVec  = (nodeP->type == CorArray)? true : false;
 
   if (isVec == true)
@@ -683,7 +683,7 @@ void corJsonRender(CorJson* corJsonP, CorNode* nodeP, char* buf)
     pushString(rBufP, "{");
 
   // If children, a newline is appended after the initial '[' or '{'
-  if (nodeP->value.firstChildP != NULL)
+  if (nodeP->value.head != NULL)
     pushString(rBufP, corJsonP->nlString);
 
   while (childP != NULL)
@@ -693,7 +693,7 @@ void corJsonRender(CorJson* corJsonP, CorNode* nodeP, char* buf)
   }
 
   // If children, a newline is appended before the last ']' or '}'
-  if (nodeP->value.firstChildP != NULL)
+  if (nodeP->value.head != NULL)
     pushString(rBufP, corJsonP->nlString);
 
   if (isVec == false)
@@ -727,7 +727,7 @@ static void corJsonFastRender2(RenderBuffer* rBufP, CorNode* nodeP, bool inVec)
   {
     pushChar(rBufP, '{');
 
-    CorNode* nP = nodeP->value.firstChildP;
+    CorNode* nP = nodeP->value.head;
 
     while (nP != NULL)
     {
@@ -741,7 +741,7 @@ static void corJsonFastRender2(RenderBuffer* rBufP, CorNode* nodeP, bool inVec)
   {
     pushChar(rBufP, '[');
 
-    CorNode* nP = nodeP->value.firstChildP;
+    CorNode* nP = nodeP->value.head;
 
     while (nP != NULL)
     {
@@ -787,7 +787,7 @@ void corJsonFastRender(CorNode* nodeP, char* buf)
     return;
   }
 
-  CorNode* childP = nodeP->value.firstChildP;
+  CorNode* childP = nodeP->value.head;
   bool   isVec  = (nodeP->type == CorArray)? true : false;
 
   if (isVec == true)
