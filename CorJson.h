@@ -12,7 +12,7 @@
 //
 #include <stdbool.h>                         // bool
 
-#include "kalloc/KAlloc.h"              // KAlloc
+#include "corAlloc/CorAlloc.h"          // CorAlloc
 #include "corJson/CorJsonStatus.h"             // CorJsonStatus
 #include "corTree/CorNode.h"               // CorNode
 
@@ -83,7 +83,7 @@ typedef struct CorJson
   char*           jsonP;             // points to current position of json input buffer 'CorJson::json'
 
   // Allocator
-  KAlloc*         kallocP;           // points to the allocator
+  CorAlloc*       kallocP;           // points to the allocator
 
   // output
   CorNode*         tree;              // tree of kjson nodes as result of parse

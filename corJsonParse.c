@@ -76,8 +76,8 @@
 #include <stdbool.h>                         // bool
 #include "corLog/corLog.h"                // COR_E, COR_RE, COR_T
 
-#include "kalloc/KAlloc.h"              // KAlloc
-#include "kalloc/kaAlloc.h"             // kaAlloc
+#include "corAlloc/CorAlloc.h"          // CorAlloc
+#include "corAlloc/corAlloc.h"          // corAlloc
 
 #include "corJson/corJsonTraceLevels.h"        // Trace Levels for the kjson library
 #include "corJson/corJsonConfig.h"             // Configuration definition
@@ -790,7 +790,7 @@ static CorNode* corJsonParseMember(CorJson* corJsonP, CorNode* objectP)
   nodeP->name = nameStart;
 #else
   {
-    nodeP = (CorNode*) kaAlloc(corJsonP->kallocP, sizeof(CorNode));
+    nodeP = (CorNode*) corAlloc(corJsonP->kallocP, sizeof(CorNode));
     memset(nodeP, 0, sizeof(CorNode));
     nodeP->name = nameStart;
   }
@@ -866,7 +866,7 @@ static CorNode* corJsonParseArrayMember(CorJson* corJsonP, CorNode* arrayP)
     CorNode node;
     nodeP = &node;
 #else
-    nodeP = (CorNode*) kaAlloc(corJsonP->kallocP, sizeof(CorNode));
+    nodeP = (CorNode*) corAlloc(corJsonP->kallocP, sizeof(CorNode));
     memset(nodeP, 0, sizeof(CorNode));
 #endif
 
@@ -1054,7 +1054,7 @@ CorNode* corJsonParse(CorJson* corJsonP, char* json)
   if ((json == NULL) || (*json == 0))
     COR_RE(NULL, "no json buffer");
 
-  CorNode*  top = (CorNode*) kaAlloc(corJsonP->kallocP, sizeof(CorNode));
+  CorNode*  top = (CorNode*) corAlloc(corJsonP->kallocP, sizeof(CorNode));
   memset(top, 0, sizeof(CorNode));
 
   if (top == NULL)

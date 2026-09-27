@@ -15,7 +15,7 @@
 #include "kbase/kFloatTrim.h"           // kFloatTrim
 #include "kbase/kLibLog.h"              // K Log macros
 
-#include "kalloc/kaAlloc.h"             // kaAlloc
+#include "corAlloc/corAlloc.h"          // corAlloc
 #include "corJson/corJsonTraceLevels.h"        // Trace Levels for the kjson library
 #include "corJson/CorJson.h"                // CorJson struct
 #include "corJson/corJsonRender.h"             // Own Interface
@@ -108,8 +108,8 @@ void corJsonIndentLevelInit(CorJson* corJsonP)
   }
 
   // Now we can allocate
-  corJsonP->iVec     = (char**) kaAlloc(corJsonP->kallocP, bytesForIndentVector);
-  corJsonP->iStrings = (char*)  kaAlloc(corJsonP->kallocP, bytesForIndentStrings);
+  corJsonP->iVec     = (char**) corAlloc(corJsonP->kallocP, bytesForIndentVector);
+  corJsonP->iStrings = (char*)  corAlloc(corJsonP->kallocP, bytesForIndentStrings);
 
   int ix;
   int bufIx = 0;
