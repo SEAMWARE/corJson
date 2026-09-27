@@ -18,9 +18,9 @@
 #include <stdlib.h>                          // exit
 
 #include "kbase/kBasicLog.h"                  // kbVerbose, kbNoLineNumbers
-#include "ktrace/ktInit.h"                    // ktInit
-#include "ktrace/ktTraceLevelSet.h"           // ktTraceLevelSet
-#include "ktrace/kTrace.h"                    // KT_V, KT_E, KT_X, KT_RE
+#include "corLog/corLogInit.h"                // corLogInit
+#include "corLog/corLogTraceLevelSet.h"       // corLogTraceLevelSet
+#include "corLog/corLog.h"                    // COR_V, COR_E, COR_X, COR_RE
 #include "kbase/kMacros.h"                   // K_FT, et al
 #include <stdbool.h>                              // bool
 
@@ -71,7 +71,7 @@ typedef enum TestTraceLevel
 //
 // traceLevelInfo
 //
-// ktrace numbers trace levels flat, per library, so there is no table to
+// corLog numbers trace levels flat, per library, so there is no table to
 // register and no component handle to pass around - which is the whole of what
 // klog did here. kjson's own levels are in kjson/KjTraceLevels.h (50-66); these
 // two belong to this tool.
@@ -197,10 +197,10 @@ void parseArgs(int argC, char* argV[])
 {
   int ix = 1;
 
-  KT_V("In parseArgs");
+  COR_V("In parseArgs");
   while (ix < argC)
   {
-    KT_V("arg %d: %s", ix, argV[ix]);
+    COR_V("arg %d: %s", ix, argV[ix]);
     if (strcmp(argV[ix], "-u") == 0)
     {
       usage();
@@ -222,7 +222,7 @@ void parseArgs(int argC, char* argV[])
         exit(CorJsonXInvalidOption);
       }
 
-      ktTraceLevelSet(argV[ix], false);
+      corLogTraceLevelSet(argV[ix], false);
     }
     else if (strcmp(argV[ix], "-t") == 0)
     {
@@ -234,7 +234,7 @@ void parseArgs(int argC, char* argV[])
         exit(CorJsonXInvalidOption);
       }
 
-      ktTraceLevelSet(argV[ix], false);
+      corLogTraceLevelSet(argV[ix], false);
     }
     else if (strcmp(argV[ix], "-V") == 0)
     {
@@ -249,8 +249,8 @@ void parseArgs(int argC, char* argV[])
     }
     else if (strcmp(argV[ix], "-v") == 0)
     {
-      KT_V("Got -v");
-      KT_V("Can you see me?");
+      COR_V("Got -v");
+      COR_V("Can you see me?");
     }
     else if (strcmp(argV[ix], "-min") == 0)
       minimized = true;
@@ -291,7 +291,7 @@ void parseArgs(int argC, char* argV[])
       }
 
       shortArrayMaxLen = argV[ix];
-      KT_V("shortArrayMaxLen == '%s'", shortArrayMaxLen);
+      COR_V("shortArrayMaxLen == '%s'", shortArrayMaxLen);
     }
     else if (strcmp(argV[ix], "-soml") == 0)
     {
@@ -454,7 +454,7 @@ int pipeRead(char* buf, int bufLen)
   int    fds;
   fd_set rFds;
 
-  KT_V("Anything to read on stdin?");
+  COR_V("Anything to read on stdin?");
 
   while (1)
   {
@@ -643,11 +643,11 @@ int main(int argC, char* argV[])
   // Initialize the trace library.
   //
   // klInit + klConfig(KlcErrorHook) + klComponentRegister were three calls to
-  // stand up a per-component registry. ktrace has one: the owner says where
+  // stand up a per-component registry. corLog has one: the owner says where
   // output goes, and the libraries just trace by number.
   //
-  if (ktInit(progName, NULL, true, NULL, NULL, false, false, false) != 0)
-    KT_RE(1, "ktInit failed");
+  if (corLogInit(progName, NULL, true, NULL, NULL, false, false, false) != 0)
+    COR_RE(1, "corLogInit failed");
 
   CorJson  kjson;
   KAlloc kalloc;
@@ -687,7 +687,7 @@ int main(int argC, char* argV[])
   // input buffer both from stdin and file?
   //
   if ((bufLen != 0) && (jsonFile != NULL))
-    KT_X(7, "JSON contents via pipe AND via file as argument (%s) is not allowed", jsonFile);
+    COR_X(7, "JSON contents via pipe AND via file as argument (%s) is not allowed", jsonFile);
 
   //
   // Input buffer from file?
@@ -697,7 +697,7 @@ int main(int argC, char* argV[])
     // Read contents of the file 'jsonFile' and dump into the buffer 'jsonBuf'
     if (jsonFile == NULL)
     {
-      KT_E("no JSON data given (use either CLI parameter or pipe the data via stdin");
+      COR_E("no JSON data given (use either CLI parameter or pipe the data via stdin");
       usage();
       exit(8);
     }
@@ -711,7 +711,7 @@ int main(int argC, char* argV[])
   // Now, do we have any data?
   //
   if (bufLen <= 0)
-    KT_X(9, "no JSON buffer to examine");
+    COR_X(9, "no JSON buffer to examine");
 
 
   //
@@ -788,7 +788,7 @@ int main(int argC, char* argV[])
   //
   // Parse JSON buffer
   //
-  KT_V("Calling corJsonParse");
+  COR_V("Calling corJsonParse");
   CorNode* top = corJsonParse(corJsonP, jsonBuf);
 
   if (top == NULL)
@@ -801,7 +801,7 @@ int main(int argC, char* argV[])
     exit(10);
   }
 
-  KT_V("Back from corJsonParse");
+  COR_V("Back from corJsonParse");
 
   //
   // Render output to file/stdout/stderr
@@ -809,9 +809,9 @@ int main(int argC, char* argV[])
   if (saxTest == true)  // No render if SAX test - output already out there
     return 0;
 
-  KT_V("Calling corJsonRender");
+  COR_V("Calling corJsonRender");
   corJsonRender(corJsonP, top, outputBuffer);
-  KT_V("Back from corJsonRender");
+  COR_V("Back from corJsonRender");
 
   if (outFile != NULL)
     outputToFile(outFile, outputBuffer);
