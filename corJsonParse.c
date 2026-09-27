@@ -74,7 +74,7 @@
 #include <string.h>                     // strcpy, et al
 
 #include <stdbool.h>                         // bool
-#include "ktrace/kTrace.h"                // KT_E, KT_RE, KT_T
+#include "corLog/corLog.h"                // COR_E, COR_RE, COR_T
 
 #include "kalloc/KAlloc.h"              // KAlloc
 #include "kalloc/kaAlloc.h"             // kaAlloc
@@ -302,23 +302,23 @@ static bool corJsonUnescapeChar(CorJson* corJsonP, char** writePP)
 //
 static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSON_IN_ARRAY_AS_PARAM)
 {
-  KT_T(CorJsonTlParseValue, "Parsing a value");
+  COR_T(CorJsonTlParseValue, "Parsing a value");
   EAT_WHITESPACE(corJsonP->jsonP);
 
   switch (*corJsonP->jsonP)
   {
   case ',':
     corJsonErrorStringSet(corJsonP, "JSON Parse Error: invalid value, double comma?");
-    KT_E("%s", corJsonP->errorString);
+    COR_E("%s", corJsonP->errorString);
     COR_JSON_ERR(corJsonP, 1);
     return CorJsonParseError;
 
   case '"':  // String
-    KT_T(CorJsonTlParseValue, "Parsing a STRING value. Node (%s) at %p", nodeP->name, nodeP);
+    COR_T(CorJsonTlParseValue, "Parsing a STRING value. Node (%s) at %p", nodeP->name, nodeP);
 
     nodeP->type    = CorString;
     nodeP->value.s = ++corJsonP->jsonP;
-    KT_T(CorJsonTlParseValue, "nodeP->value.s: %s", nodeP->value.s);
+    COR_T(CorJsonTlParseValue, "nodeP->value.s: %s", nodeP->value.s);
 
     //
     // Find ending citation-mark, unescape in-place, and string-terminate
@@ -359,7 +359,7 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
       else
       {
         corJsonErrorStringSet(corJsonP, "JSON Parse Error: no ending citation-mark found for string value");
-        KT_E("%s", corJsonP->errorString);
+        COR_E("%s", corJsonP->errorString);
         COR_JSON_ERR(corJsonP, 1);
         return CorJsonParseError;
       }
@@ -370,7 +370,7 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
     ++corJsonP->jsonP;
     COR_JSON_SAX(corJsonP, CorJsonStringValue, nodeP->name, &nodeP->value, inArray);
 
-    KT_T(CorJsonTlParseValue, "Parsed a STRING value (of length %lu) '%s' for '%s' at %p", strlen(nodeP->value.s), nodeP->value.s, nodeP->name, nodeP);
+    COR_T(CorJsonTlParseValue, "Parsed a STRING value (of length %lu) '%s' for '%s' at %p", strlen(nodeP->value.s), nodeP->value.s, nodeP->name, nodeP);
     return CorJsonOk;
 
   case '-':
@@ -403,7 +403,7 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
     //   If only for presentation (json beautifier), just keep the string as is, no conversion necessary
     //
 
-    KT_T(CorJsonTlParseValue, "Parsing a number: %s", corJsonP->jsonP);
+    COR_T(CorJsonTlParseValue, "Parsing a number: %s", corJsonP->jsonP);
 
     long long      ipart       = 0;  // integer part
     long long      fpart       = 0;  // fraction part (if float)
@@ -454,11 +454,11 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
       COR_JSON_ERR(corJsonP, 1);
       return CorJsonParseError;
     }
-    KT_T(CorJsonTlParseValue, "Got int-part: %lld", ipart);
+    COR_T(CorJsonTlParseValue, "Got int-part: %lld", ipart);
 
     if (*corJsonP->jsonP == '.')
     {
-      KT_T(CorJsonTlParseValue, "Got dot");
+      COR_T(CorJsonTlParseValue, "Got dot");
 
       isFloat = true;
       ++corJsonP->jsonP;
@@ -478,13 +478,13 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
         ++decimals;
         ++corJsonP->jsonP;
       }
-      KT_T(CorJsonTlParseValue, "GOT fraction part: %lld (fdiv=%d)", fpart, fdiv);
+      COR_T(CorJsonTlParseValue, "GOT fraction part: %lld (fdiv=%d)", fpart, fdiv);
     }
 
     int esign = 1;
     if ((*corJsonP->jsonP == 'E') || (*corJsonP->jsonP == 'e'))
     {
-      KT_T(CorJsonTlParseValue, "GOT E/e");
+      COR_T(CorJsonTlParseValue, "GOT E/e");
       hasExponent = true;
       ++corJsonP->jsonP;
       if (*corJsonP->jsonP == '-')
@@ -520,7 +520,7 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
       //
       if (hasExponent == true)
       {
-        KT_T(CorJsonTlParseValue, "epart=%lld, esign=%d", epart, esign);
+        COR_T(CorJsonTlParseValue, "epart=%lld, esign=%d", epart, esign);
 
         if ((isFloat == false) && (esign == 1) && (epart <= 18))
         {
@@ -551,7 +551,7 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
           1e-20, 1e-21, 1e-22
         };
 
-        KT_T(CorJsonTlParseValue, "Parsing a FLOAT (numbersAsStrings == false)");
+        COR_T(CorJsonTlParseValue, "Parsing a FLOAT (numbersAsStrings == false)");
 
         //
         // Combine integer and fractional parts into one significand
@@ -596,14 +596,14 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
           nodeP->value.f = sign * (ipart + f);  // No exponent here - see above
         }
 
-        KT_T(CorJsonTlParseValue, "Parsed a FLOAT value '%f' for '%s' at %p", nodeP->value.f, nodeP->name, nodeP);
+        COR_T(CorJsonTlParseValue, "Parsed a FLOAT value '%f' for '%s' at %p", nodeP->value.f, nodeP->name, nodeP);
         COR_JSON_SAX(corJsonP, CorJsonFloatValue, nodeP->name, &nodeP->value, inArray);
       }
       else
       {
         nodeP->type     = CorInt;
         nodeP->value.i  = sign * ipart * expo;
-        KT_T(CorJsonTlParseValue, "Parsed an INTEGER value '%lld' for '%s' at %p", nodeP->value.i, nodeP->name, nodeP);
+        COR_T(CorJsonTlParseValue, "Parsed an INTEGER value '%lld' for '%s' at %p", nodeP->value.i, nodeP->name, nodeP);
         COR_JSON_SAX(corJsonP, CorJsonIntegerValue, nodeP->name, &nodeP->value, inArray);
       }
     }
@@ -612,7 +612,7 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
 
   case '{':  // JSON Object
     nodeP->type = CorObject;
-    KT_T(CorJsonTlParseValue, "Parsing an OBJECT for '%s' at %p", nodeP->name, nodeP);
+    COR_T(CorJsonTlParseValue, "Parsing an OBJECT for '%s' at %p", nodeP->name, nodeP);
     ++corJsonP->jsonP;
 
     COR_JSON_SAX(corJsonP, CorJsonObjectStart, nodeP->name, NULL, inArray);
@@ -623,7 +623,7 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
     return CorJsonParseError;
 
   case '[':  // JSON Array
-    KT_T(CorJsonTlParseValue, "Parsing an ARRAY as value for '%s' at %p", nodeP->name, nodeP);
+    COR_T(CorJsonTlParseValue, "Parsing an ARRAY as value for '%s' at %p", nodeP->name, nodeP);
     nodeP->type         = CorArray;
     ++corJsonP->jsonP;
 
@@ -632,14 +632,14 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
       return CorJsonOk;
 
     // corJsonP->errorString set by corJsonParseArray()
-    KT_E("%s", corJsonP->errorString);
+    COR_E("%s", corJsonP->errorString);
     COR_JSON_ERR(corJsonP, 1);
     return CorJsonParseError;
 
   case 'n':  // Possible 'null'
     if ((corJsonP->jsonP[1] == 'u') && (corJsonP->jsonP[2] == 'l') && (corJsonP->jsonP[3] == 'l'))
     {
-      KT_T(CorJsonTlParseValue, "Parsed a NULL value for '%s' at %p",  nodeP->name, nodeP);
+      COR_T(CorJsonTlParseValue, "Parsed a NULL value for '%s' at %p", nodeP->name, nodeP);
       nodeP->type = CorNull;
       corJsonP->jsonP += 4;
 
@@ -648,14 +648,14 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
     }
 
     corJsonErrorStringSet(corJsonP, "JSON Parse Error: invalid value");
-    KT_E("%s", corJsonP->errorString);
+    COR_E("%s", corJsonP->errorString);
     COR_JSON_ERR(corJsonP, 1);
     return CorJsonParseError;
 
   case 't':  // Possible true
     if ((corJsonP->jsonP[1] == 'r') && (corJsonP->jsonP[2] == 'u') && (corJsonP->jsonP[3] == 'e'))
     {
-      KT_T(CorJsonTlParseValue, "Parsed a TRUE value for '%s' at %p",  nodeP->name, nodeP);
+      COR_T(CorJsonTlParseValue, "Parsed a TRUE value for '%s' at %p", nodeP->name, nodeP);
       nodeP->type    = CorBoolean;
       nodeP->value.b = true;
       corJsonP->jsonP += 4;
@@ -665,7 +665,7 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
     }
 
     corJsonErrorStringSet(corJsonP, "JSON Parse Error: invalid value");
-    KT_E("%s", corJsonP->errorString);
+    COR_E("%s", corJsonP->errorString);
     COR_JSON_ERR(corJsonP, 1);
     return CorJsonParseError;
 
@@ -675,25 +675,25 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
       nodeP->type    = CorBoolean;
       nodeP->value.b = false;
       corJsonP->jsonP += 5;
-      KT_T(CorJsonTlParseValue, "Parsed a FALSE value for '%s' at %p",  nodeP->name, nodeP);
+      COR_T(CorJsonTlParseValue, "Parsed a FALSE value for '%s' at %p", nodeP->name, nodeP);
 
       COR_JSON_SAX(corJsonP, CorJsonBoolValue, nodeP->name, &nodeP->value, inArray);
       return CorJsonOk;
     }
 
     corJsonErrorStringSet(corJsonP, "JSON Parse Error: invalid value");
-    KT_E("%s", corJsonP->errorString);
+    COR_E("%s", corJsonP->errorString);
     COR_JSON_ERR(corJsonP, 1);
     return CorJsonParseError;
 
   default:
     corJsonErrorStringSet(corJsonP, "JSON Parse Error: invalid value");
-    KT_E("%s (%c)", corJsonP->errorString, *corJsonP->jsonP);
+    COR_E("%s (%c)", corJsonP->errorString, *corJsonP->jsonP);
     COR_JSON_ERR(corJsonP, 1);
     return CorJsonParseError;
   }
 
-  KT_E("PARSE ERROR");
+  COR_E("PARSE ERROR");
   COR_JSON_ERR(corJsonP, 1);
   return CorJsonParseError;
 }
@@ -726,7 +726,7 @@ static CorNode* corJsonParseMember(CorJson* corJsonP, CorNode* objectP)
 {
   EAT_WHITESPACE(corJsonP->jsonP);
 
-  KT_T(CorJsonTlParseObject, "parsing a member: %s", corJsonP->jsonP);
+  COR_T(CorJsonTlParseObject, "parsing a member: %s", corJsonP->jsonP);
   if (*corJsonP->jsonP != '"')
   {
     corJsonErrorStringSet(corJsonP, "JSON Parse Error: no starting citation-mark found for name of member");
@@ -734,7 +734,7 @@ static CorNode* corJsonParseMember(CorJson* corJsonP, CorNode* objectP)
     return NULL;
   }
 
-  KT_T(CorJsonTlParseObject, "Step over citation-mark and save as start of name of member");
+  COR_T(CorJsonTlParseObject, "Step over citation-mark and save as start of name of member");
   // Step over citation-mark and save as start of name of member
   char* nameStart = ++corJsonP->jsonP;
   char* writeP    = corJsonP->jsonP;
@@ -761,7 +761,7 @@ static CorNode* corJsonParseMember(CorJson* corJsonP, CorNode* objectP)
     else  // Backslash: unescape in-place
     {
       corJsonP->jsonP++;  // Step over the backslash
-      KT_T(CorJsonTlParseObject, "Got a backslash. Next char is %c", *corJsonP->jsonP);
+      COR_T(CorJsonTlParseObject, "Got a backslash. Next char is %c", *corJsonP->jsonP);
       if (corJsonUnescapeChar(corJsonP, &writeP) == false)
       {
         corJsonP->jsonP--;  // Step back to backslash for error position
@@ -796,7 +796,7 @@ static CorNode* corJsonParseMember(CorJson* corJsonP, CorNode* objectP)
   }
 #endif
 
-  KT_T(CorJsonTlParseObject, "Setting nodeP->next to NULL (node name: %s)", nodeP->name);
+  COR_T(CorJsonTlParseObject, "Setting nodeP->next to NULL (node name: %s)", nodeP->name);
   nodeP->next = NULL;
 
   //
@@ -827,7 +827,7 @@ static CorNode* corJsonParseMember(CorJson* corJsonP, CorNode* objectP)
   if (*corJsonP->jsonP != ':')
   {
     corJsonErrorStringSet(corJsonP, "JSON Parse Error: no colon found after name of member");
-    KT_E(corJsonP->errorString);
+    COR_E(corJsonP->errorString);
     COR_JSON_ERR(corJsonP, 1);
     return NULL;
   }
@@ -835,11 +835,11 @@ static CorNode* corJsonParseMember(CorJson* corJsonP, CorNode* objectP)
 
   // Now, the value
 
-  KT_T(CorJsonTlParseObject, "corJsonParseMember calls corJsonParseValue");
+  COR_T(CorJsonTlParseObject, "corJsonParseMember calls corJsonParseValue");
   if (corJsonParseValue(corJsonP, nodeP COR_JSON_IN_ARRAY_FALSE) != CorJsonOk)
   {
     // corJsonP->errorString set by corJsonParseValue()
-    KT_E(corJsonP->errorString);
+    COR_E(corJsonP->errorString);
     COR_JSON_ERR(corJsonP, 1);
     return NULL;
   }
@@ -882,17 +882,17 @@ static CorNode* corJsonParseArrayMember(CorJson* corJsonP, CorNode* arrayP)
 #endif
 
     CorJsonStatus s;
-    KT_T(CorJsonTlParseObject, "corJsonParseArrayMember calling corJsonParseValue");
+    COR_T(CorJsonTlParseObject, "corJsonParseArrayMember calling corJsonParseValue");
     if ((s = corJsonParseValue(corJsonP, nodeP COR_JSON_IN_ARRAY_TRUE)) != CorJsonOk)
     {
-      KT_E("corJsonParseValue returned %s for node '%s'", corJsonStatus(s), nodeP->name);
+      COR_E("corJsonParseValue returned %s for node '%s'", corJsonStatus(s), nodeP->name);
       COR_JSON_ERR(corJsonP, 1);
       return NULL;
     }
 
 #ifdef KJ_LOG_ON
     char v[64];
-    KT_T(CorJsonTlParseObject, "Parsed an ARRAY-member: '%s'", corTreeValue(nodeP, v, 64));
+    COR_T(CorJsonTlParseObject, "Parsed an ARRAY-member: '%s'", corTreeValue(nodeP, v, 64));
 #endif
     return nodeP;
   }
@@ -910,7 +910,7 @@ static CorNode* corJsonParseArrayMember(CorJson* corJsonP, CorNode* arrayP)
 //
 static CorNode* corJsonParseObject(CorJson* corJsonP, CorNode* objNode COR_JSON_IN_ARRAY_AS_PARAM)
 {
-  KT_T(CorJsonTlParseObject, "Parsing an OBJECT: %s", corJsonP->jsonP);
+  COR_T(CorJsonTlParseObject, "Parsing an OBJECT: %s", corJsonP->jsonP);
 
   objNode->type = CorObject;
 
@@ -920,7 +920,7 @@ static CorNode* corJsonParseObject(CorJson* corJsonP, CorNode* objNode COR_JSON_
   // Empty object?
   if (*corJsonP->jsonP == '}')
   {
-    KT_T(CorJsonTlParseObject, "Got an EMPTY OBJECT");
+    COR_T(CorJsonTlParseObject, "Got an EMPTY OBJECT");
     ++corJsonP->jsonP;
 
     COR_JSON_SAX(corJsonP, CorJsonObjectEnd, objNode->name, NULL, inArray);
@@ -929,12 +929,12 @@ static CorNode* corJsonParseObject(CorJson* corJsonP, CorNode* objNode COR_JSON_
 
   while (1)
   {
-    KT_T(CorJsonTlParseObject, "Parsing object-member '%s': %s", objNode->name, corJsonP->jsonP);
+    COR_T(CorJsonTlParseObject, "Parsing object-member '%s': %s", objNode->name, corJsonP->jsonP);
     corJsonErrorStringSet(corJsonP, NULL);
     if (corJsonParseMember(corJsonP, objNode) == NULL)
     {
       COR_JSON_ERR(corJsonP, 1);
-      KT_E("corJsonParseMember returned NULL. Pos %d: '%s'", corJsonP->errorPos, corJsonP->jsonP);
+      COR_E("corJsonParseMember returned NULL. Pos %d: '%s'", corJsonP->errorPos, corJsonP->jsonP);
       return NULL;
     }
 
@@ -946,7 +946,7 @@ static CorNode* corJsonParseObject(CorJson* corJsonP, CorNode* objNode COR_JSON_
       if (corJsonP->errorString[0] == 0)
         corJsonErrorStringSet(corJsonP, "JSON Parse Error: expecting comma or end of object");
       COR_JSON_ERR(corJsonP, 1);
-      KT_E("Expected comma or end of object. Pos %d: '%s'", corJsonP->errorPos, corJsonP->jsonP);
+      COR_E("Expected comma or end of object. Pos %d: '%s'", corJsonP->errorPos, corJsonP->jsonP);
       return NULL;
     }
 
@@ -971,7 +971,7 @@ static CorNode* corJsonParseObject(CorJson* corJsonP, CorNode* objNode COR_JSON_
 //
 static CorNode* corJsonParseArray(CorJson* corJsonP, CorNode* arrNode COR_JSON_IN_ARRAY_AS_PARAM)
 {
-  KT_T(CorJsonTlParseArray, "Parsing an ARRAY: %s", corJsonP->jsonP);
+  COR_T(CorJsonTlParseArray, "Parsing an ARRAY: %s", corJsonP->jsonP);
 
   arrNode->type = CorArray;
 
@@ -997,7 +997,7 @@ static CorNode* corJsonParseArray(CorJson* corJsonP, CorNode* arrNode COR_JSON_I
 
     if (corJsonParseArrayMember(corJsonP, arrNode) == NULL)
     {
-      KT_T(CorJsonTlParseArray, "Error parsing ArrayMember");
+      COR_T(CorJsonTlParseArray, "Error parsing ArrayMember");
       COR_JSON_ERR(corJsonP, 1);
       return NULL;
     }
@@ -1009,7 +1009,7 @@ static CorNode* corJsonParseArray(CorJson* corJsonP, CorNode* arrNode COR_JSON_I
     if ((*corJsonP->jsonP != ',') && (*corJsonP->jsonP != ']'))
     {
       corJsonErrorStringSet(corJsonP, "JSON Parse Error: expecting comma or end of array");
-      KT_E("%s. Got %c", corJsonP->errorString, *corJsonP->jsonP);
+      COR_E("%s. Got %c", corJsonP->errorString, *corJsonP->jsonP);
       COR_JSON_ERR(corJsonP, 1);
 
       return NULL;
@@ -1031,7 +1031,7 @@ static CorNode* corJsonParseArray(CorJson* corJsonP, CorNode* arrNode COR_JSON_I
     {
       corJsonP->lineNo      = commaLine;
       corJsonErrorStringSet(corJsonP, "JSON Parse Error: trailing comma");
-      KT_E("%s", corJsonP->errorString);
+      COR_E("%s", corJsonP->errorString);
       COR_JSON_ERR(corJsonP, 1);
 
       return NULL;
@@ -1049,16 +1049,16 @@ static CorNode* corJsonParseArray(CorJson* corJsonP, CorNode* arrNode COR_JSON_I
 //
 CorNode* corJsonParse(CorJson* corJsonP, char* json)
 {
-  KT_T(CorJsonTlParse, "Parsing '%s'", json);
+  COR_T(CorJsonTlParse, "Parsing '%s'", json);
 
   if ((json == NULL) || (*json == 0))
-    KT_RE(NULL, "no json buffer");
+    COR_RE(NULL, "no json buffer");
 
   CorNode*  top = (CorNode*) kaAlloc(corJsonP->kallocP, sizeof(CorNode));
   memset(top, 0, sizeof(CorNode));
 
   if (top == NULL)
-    KT_RE(NULL, "calloc");
+    COR_RE(NULL, "calloc");
 
 #ifdef COR_JSON_DOM_ON
   corJsonP->tree              = top;
@@ -1083,7 +1083,7 @@ CorNode* corJsonParse(CorJson* corJsonP, char* json)
 
     if (corJsonParseObject(corJsonP, top COR_JSON_IN_ARRAY_FALSE) == NULL)
     {
-      KT_E("corJsonParseObject returned NULL");
+      COR_E("corJsonParseObject returned NULL");
       top = NULL;  // mark as erroneous
     }
   }
@@ -1096,7 +1096,7 @@ CorNode* corJsonParse(CorJson* corJsonP, char* json)
 
     if (corJsonParseArray(corJsonP, top COR_JSON_IN_ARRAY_FALSE) == NULL)
     {
-      KT_E("corJsonParseObject returned NULL");
+      COR_E("corJsonParseObject returned NULL");
       top = NULL;  // mark as erroneous
     }
   }
@@ -1106,7 +1106,7 @@ CorNode* corJsonParse(CorJson* corJsonP, char* json)
 
     if (corJsonParseValue(corJsonP, top COR_JSON_IN_ARRAY_FALSE) != CorJsonOk)
     {
-      KT_E("corJsonParseValue error");
+      COR_E("corJsonParseValue error");
       top = NULL;  // mark as erroneous
     }
   }
