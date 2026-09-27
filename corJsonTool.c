@@ -17,11 +17,10 @@
 #include <sys/select.h>                      // select
 #include <stdlib.h>                          // exit
 
-#include "kbase/kBasicLog.h"                  // kbVerbose, kbNoLineNumbers
 #include "corLog/corLogInit.h"                // corLogInit
 #include "corLog/corLogTraceLevelSet.h"       // corLogTraceLevelSet
 #include "corLog/corLog.h"                    // COR_V, COR_E, COR_X, COR_RE
-#include "kbase/kMacros.h"                   // K_FT, et al
+#include "corBase/corMacros.h"               // COR_FT, et al
 #include <stdbool.h>                              // bool
 
 
@@ -603,7 +602,7 @@ static int saxTestFunction(CorJson* corJsonP, CorJsonSaxEvent event, char* name,
     break;
 
   case CorJsonBoolValue:
-    printf(": %s", K_FT(valueP->b));
+    printf(": %s", COR_FT(valueP->b));
     break;
 
   case CorJsonNullValue:
@@ -659,19 +658,6 @@ int main(int argC, char* argV[])
 
 
   parseArgs(argC, argV);
-
-  //
-  // Line numbers in log file often change and make the diff more complicated.
-  // So, for 'ktest' tests, line numbers are switched off - always shown as ZERO.
-  //
-  if (ktest == true)
-  {
-    kbNoLineNumbers = true;
-    kbVerbose       = false;
-  }
-  else
-  {
-  }
 
   //
   // json input can come either via stdin (pipe) or via a file (as CLI parameter)

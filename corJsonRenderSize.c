@@ -10,7 +10,7 @@
 #include <stdio.h>                      // snprintf
 #include <string.h>                     // strlen
 
-#include "kbase/kFloatTrim.h"           // kFloatTrim
+#include "corBase/corFloatTrim.h"       // corFloatTrim
 #include "corJson/CorJson.h"                // CorJson struct
 #include "corJson/corJsonRenderSize.h"         // Own Interface
 
@@ -44,7 +44,7 @@ static int countFloatSize(double d)
 {
   char number[32];
 
-  kFloatTrim(number, d);
+  corFloatTrim(number, d);
 
   return strlen(number) + 1;  // Adding an extra char - in case of rounding problems
 }

@@ -9,7 +9,6 @@
 //
 #include <stdlib.h>                              // malloc, calloc, free
 #include <string.h>                              // memset
-#include "kbase/kLibLog.h"              // K Log macros
 #include "corAlloc/CorAlloc.h"          // CorAlloc
 #include "corAlloc/corAllocBufferInit.h"        // corAllocBufferInit
 

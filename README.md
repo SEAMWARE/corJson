@@ -8,7 +8,7 @@ itself lives in corTree; this library only reads and writes JSON.
 - **Language:** C
 - **License:** [Apache License 2.0](LICENSE)
 
-The dependencies are **corTree, corAlloc, corLog and kbase**.
+The dependencies are **corTree, corAlloc, corLog and corBase**.
 
 ## Where it comes from
 

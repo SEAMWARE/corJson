@@ -12,7 +12,6 @@
 #include <stdio.h>                      // sprintf
 
 #include <stdbool.h>                         // bool
-#include "kbase/kLibLog.h"              // K Log macros
 
 #include "corJson/CorJson.h"                // CorJson struct
 #include "corJson/CorJsonStatus.h"             // CorJsonStatus

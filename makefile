@@ -47,7 +47,7 @@ DEPS          = $(OBJECTS:.o=.d)
 # the sibling checkout is the source of truth, and a -l would happily find an
 # older copy installed somewhere on the system.
 #
-LIBS          = ../corTree/libcorTree.a ../corAlloc/libcorAlloc.a ../corLog/libcorLog.a ../kbase/libkbase.a -lpthread -lrt -lm
+LIBS          = ../corTree/libcorTree.a ../corAlloc/libcorAlloc.a ../corLog/libcorLog.a ../corBase/libcorBase.a -lpthread -lrt -lm
 
 TOOL          = corJson
 
