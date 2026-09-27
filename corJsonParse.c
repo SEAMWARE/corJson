@@ -309,7 +309,7 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
   {
   case ',':
     corJsonErrorStringSet(corJsonP, "JSON Parse Error: invalid value, double comma?");
-    KT_E(0, "%s", corJsonP->errorString);
+    KT_E("%s", corJsonP->errorString);
     COR_JSON_ERR(corJsonP, 1);
     return CorJsonParseError;
 
@@ -359,7 +359,7 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
       else
       {
         corJsonErrorStringSet(corJsonP, "JSON Parse Error: no ending citation-mark found for string value");
-        KT_E(0, "%s", corJsonP->errorString);
+        KT_E("%s", corJsonP->errorString);
         COR_JSON_ERR(corJsonP, 1);
         return CorJsonParseError;
       }
@@ -693,7 +693,7 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
     return CorJsonParseError;
   }
 
-  KT_E(0, "PARSE ERROR");
+  KT_E("PARSE ERROR");
   COR_JSON_ERR(corJsonP, 1);
   return CorJsonParseError;
 }
