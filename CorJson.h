@@ -74,6 +74,31 @@ typedef void (*CorJsonAddFunction)(CorNode* container, CorNode* nodeP);
 
 // -----------------------------------------------------------------------------
 //
+// CorJsonKeyFunction - called the moment a member's NAME is final
+//
+// For a parser built on top of corJson that classifies member names while the
+// tree is being built - NGSI-LD core terms, for one - so that no second walk of
+// the tree is needed. Called after the name is unescaped and null-terminated and
+// the node is linked into its container, BEFORE the value is parsed:
+//
+//   containerP  the object the member belongs to (its own name was hooked already)
+//   nodeP       the member; the function may stamp it (flags, termId) and may point
+//               nodeP->name elsewhere (e.g. at a static copy of the same name)
+//   depth       the number of enclosing containers, objects AND arrays: the members of a
+//               top-level object are at depth 1, those of the objects in a top-level array
+//               (an NGSI-LD batch) at depth 2
+//
+// Returns false to refuse the name: the parse then fails. If the function sets no
+// error string (corJsonErrorStringSet), a generic one is used.
+//
+// Array items have no name and are not hooked. The DOM parser only.
+//
+typedef bool (*CorJsonKeyFunction)(struct CorJson* corJsonP, CorNode* containerP, CorNode* nodeP, int depth);
+
+
+
+// -----------------------------------------------------------------------------
+//
 // CorJson -
 //
 typedef struct CorJson
@@ -98,6 +123,9 @@ typedef struct CorJson
   CorJsonSaxFunction   saxF;           // SAX callback during parse
   CorJsonErrorFunction errorF;         // Error callback during parse - NOTE: kjson stops after first error
   CorJsonAddFunction   addF;           // function pointer to 'add' function. Default: corTreeChildAdd
+  CorJsonKeyFunction   keyF;           // member-name hook - see CorJsonKeyFunction. NULL: none
+  void*                keyDataP;       // for keyF's own per-parse state - corJson never touches it
+  int                  depth;          // current nesting depth while parsing (see CorJsonKeyFunction)
   //
   // add function
   //
