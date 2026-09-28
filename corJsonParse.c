@@ -616,8 +616,12 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
     ++corJsonP->jsonP;
 
     COR_JSON_SAX(corJsonP, CorJsonObjectStart, nodeP->name, NULL, inArray);
+    ++corJsonP->depth;
     if (corJsonParseObject(corJsonP, nodeP COR_JSON_IN_ARRAY) != NULL)
+    {
+      --corJsonP->depth;
       return CorJsonOk;
+    }
 
     // corJsonP->errorString set by corJsonParseObject()
     return CorJsonParseError;
@@ -628,8 +632,12 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
     ++corJsonP->jsonP;
 
     COR_JSON_SAX(corJsonP, CorJsonArrayStart, nodeP->name, NULL, inArray);
+    ++corJsonP->depth;
     if (corJsonParseArray(corJsonP, nodeP COR_JSON_IN_ARRAY) != NULL)
+    {
+      --corJsonP->depth;
       return CorJsonOk;
+    }
 
     // corJsonP->errorString set by corJsonParseArray()
     COR_E("%s", corJsonP->errorString);
@@ -819,6 +827,18 @@ static CorNode* corJsonParseMember(CorJson* corJsonP, CorNode* objectP)
   }
   else
     corJsonP->addF(objectP, nodeP);
+
+  //
+  // The name is final and the node is in its container: the key hook may classify it now,
+  // before the value is parsed (see CorJsonKeyFunction)
+  //
+  if ((corJsonP->keyF != NULL) && (corJsonP->keyF(corJsonP, objectP, nodeP, corJsonP->depth) == false))
+  {
+    if (corJsonP->errorString[0] == 0)
+      corJsonErrorStringSet(corJsonP, "JSON Parse Error: member name refused");
+    COR_JSON_ERR(corJsonP, 1);
+    return NULL;
+  }
 #endif
 
   // Now a colon MUST come
@@ -1069,6 +1089,7 @@ CorNode* corJsonParse(CorJson* corJsonP, char* json)
 
   corJsonP->json  = json;
   corJsonP->jsonP = json;
+  corJsonP->depth = 1;   // the top-level container is entered at once - its members are at depth 1
 
   EAT_WHITESPACE(corJsonP->jsonP);
 

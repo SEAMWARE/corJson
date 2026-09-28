@@ -34,6 +34,8 @@ CorJsonStatus corJsonReset(CorJson* corJsonP)
   corJsonP->saxF                         = NULL;
   corJsonP->errorF                       = NULL;
   corJsonP->addF                         = NULL;
+  corJsonP->keyF                         = NULL;
+  corJsonP->keyDataP                     = NULL;
 
   //
   // Configuration
