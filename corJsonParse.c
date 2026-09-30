@@ -799,6 +799,11 @@ static CorNode* corJsonParseMember(CorJson* corJsonP, CorNode* objectP)
 #else
   {
     nodeP = (CorNode*) corAlloc(corJsonP->kallocP, sizeof(CorNode));
+    if (nodeP == NULL)
+    {
+      corJsonErrorStringSet(corJsonP, "JSON Parse Error: out of memory");
+      return NULL;
+    }
     memset(nodeP, 0, sizeof(CorNode));
     nodeP->name = nameStart;
   }
@@ -887,6 +892,11 @@ static CorNode* corJsonParseArrayMember(CorJson* corJsonP, CorNode* arrayP)
     nodeP = &node;
 #else
     nodeP = (CorNode*) corAlloc(corJsonP->kallocP, sizeof(CorNode));
+    if (nodeP == NULL)
+    {
+      corJsonErrorStringSet(corJsonP, "JSON Parse Error: out of memory");
+      return NULL;
+    }
     memset(nodeP, 0, sizeof(CorNode));
 #endif
 
@@ -1075,10 +1085,11 @@ CorNode* corJsonParse(CorJson* corJsonP, char* json)
     COR_RE(NULL, "no json buffer");
 
   CorNode*  top = (CorNode*) corAlloc(corJsonP->kallocP, sizeof(CorNode));
-  memset(top, 0, sizeof(CorNode));
 
   if (top == NULL)
-    COR_RE(NULL, "calloc");
+    COR_RE(NULL, "out of memory");
+
+  memset(top, 0, sizeof(CorNode));
 
 #ifdef COR_JSON_DOM_ON
   corJsonP->tree              = top;

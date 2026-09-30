@@ -110,6 +110,12 @@ void corJsonIndentLevelInit(CorJson* corJsonP)
   corJsonP->iVec     = (char**) corAlloc(corJsonP->kallocP, bytesForIndentVector);
   corJsonP->iStrings = (char*)  corAlloc(corJsonP->kallocP, bytesForIndentStrings);
 
+  if ((corJsonP->iVec == NULL) || (corJsonP->iStrings == NULL))
+  {
+    corJsonP->spacesPerIndent = 0;   // out of memory: render compact - iVec is not used without indentation
+    return;
+  }
+
   int ix;
   int bufIx = 0;
 
