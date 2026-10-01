@@ -27,9 +27,11 @@
 #include "corAlloc/corAllocBufferInit.h"     // corAllocBufferInit
 #include "corAlloc/corAllocBufferReset.h"    // corAllocBufferReset
 
+#include "corTree/corTreeBin.h"                    // corTreeBinEncode, corTreeBinDecode
 #include "corJson/corJsonTraceLevels.h"             // kjTraceLevelInfo
 #include "corJson/CorJson.h"                     // kjson library
-#include "corJson/corJsonRender.h"                  // corJsonRender
+#include "corJson/corJsonRender.h"                  // corJsonRender, corJsonFastRender
+#include "corJson/corJsonRenderSize.h"              // corJsonFastRenderSize
 #include "corJson/corJsonConfig.h"                  // corJsonConfig
 #include "corJson/corJsonParse.h"                   // corJsonParse
 #include "corJson/corJsonSax.h"                     // corJsonSaxEventName
@@ -107,6 +109,8 @@ bool   sortAlphabetically        = false;
 bool   sortAlphabeticallyReverse = false;
 bool   verbose                   = false;
 bool   parseNumbers              = false;
+bool   binRoundTrip              = false;
+bool   binStats                  = false;
 char*   shortArrayMaxLen          = NULL;
 char*   shortObjectMaxLen         = NULL;
 bool   saxTest                   = false;
@@ -178,10 +182,12 @@ static void usage(void)
          "%s [-sort (sort object members alphabetically)]\n"
          "%s [-rsort (sort object members in reverse alphabetic order)]\n"
          "%s [-saxTest (print a log line for each SAX event)]\n"
+         "%s [-bin (render the tree after a round trip through the cor binary format - must be identical)]\n"
+         "%s [-binStats (as -bin, and print the JSON and cor sizes to stderr)]\n"
          "%s <json-file>\n",
          progName,
          empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty,
-         empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty);
+         empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty);
 
   exit(CorJsonXUsage);
 }
@@ -310,6 +316,13 @@ void parseArgs(int argC, char* argV[])
       shortObjectsOnOneLine = true;
     else if (strcmp(argV[ix], "-pn") == 0)
       parseNumbers = true;
+    else if (strcmp(argV[ix], "-bin") == 0)
+      binRoundTrip = true;
+    else if (strcmp(argV[ix], "-binStats") == 0)
+    {
+      binRoundTrip = true;
+      binStats     = true;
+    }
     else if (strcmp(argV[ix], "-sort") == 0)
       sortAlphabetically = true;
     else if (strcmp(argV[ix], "-rsort") == 0)
@@ -757,7 +770,10 @@ int main(int argC, char* argV[])
   // Now, to tell kjson to NOT parse numbers, corJsonConfig is called with
   // 'CorJsonConfigNumbersAsStrings' set to 'Yes'.
   //
-  if (parseNumbers == false)
+  //
+  // -bin: numbers must be numbers - a number kept as its text has no binary form
+  //
+  if ((parseNumbers == false) && (binRoundTrip == false))
     corJsonConfig(corJsonP, CorJsonConfigNumbersAsStrings, "Yes");
   else
     corJsonConfig(corJsonP, CorJsonConfigNumbersAsStrings, "No");
@@ -788,6 +804,36 @@ int main(int argC, char* argV[])
   }
 
   COR_V("Back from corJsonParse");
+
+  //
+  // -bin: through the cor format and back. Generic - no NGSI-LD callbacks, but with the tables, so
+  // names repeat as indexes and IRIs split into namespaces.
+  //
+  if (binRoundTrip == true)
+  {
+    CorBinTables wTables;
+    CorBinTables rTables;
+    CorBinBuffer out = { NULL, 0, 0 };
+    const char*  error;
+
+    if ((corTreeBinTablesInit(&wTables, 256, 4096) == false) || (corTreeBinTablesInit(&rTables, 256, 4096) == false))
+      COR_X(11, "out of memory");
+
+    if (corTreeBinEncode(top, NULL, &wTables, &out) == false)
+      COR_X(11, "cor encode failed");
+
+    if (binStats == true)
+    {
+      char* minBuf = (char*) malloc(corJsonFastRenderSize(top) + 1);
+      corJsonFastRender(top, minBuf);
+      fprintf(stderr, "json (minimised): %d bytes, cor: %d bytes (%.0f%%)\n", (int) strlen(minBuf), out.len, 100.0 * out.len / strlen(minBuf));
+      free(minBuf);
+    }
+
+    top = corTreeBinDecode(out.buf, out.len, NULL, &rTables, &kalloc, &error);
+    if (top == NULL)
+      COR_X(12, "cor decode failed: %s", error);
+  }
 
   //
   // Render output to file/stdout/stderr
