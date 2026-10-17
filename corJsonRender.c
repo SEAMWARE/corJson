@@ -675,7 +675,16 @@ void corJsonRender(CorJson* corJsonP, CorNode* nodeP, char* buf)
 
   if ((nodeP->type != CorObject) && (nodeP->type != CorArray))
   {
+    //
+    // A scalar on its own: corJsonRender2 renders a member, and a member with a sibling ends in a comma -
+    // the node is rendered without its 'next', and the string terminated, as for a container
+    //
+    CorNode* nextP = nodeP->next;
+
+    nodeP->next = NULL;
     corJsonRender2(corJsonP, &rBuf, nodeP, 0, true);
+    nodeP->next = nextP;
+    rBufP->buf[rBufP->bytesUsed] = 0;
     return;
   }
 
@@ -788,7 +797,12 @@ void corJsonFastRender(CorNode* nodeP, char* buf)
 
   if ((nodeP->type != CorObject) && (nodeP->type != CorArray))
   {
+    CorNode* nextP = nodeP->next;              // as in corJsonRender: the scalar alone, terminated
+
+    nodeP->next = NULL;
     corJsonFastRender2(&rBuf, nodeP, true);
+    nodeP->next = nextP;
+    rBufP->buf[rBufP->bytesUsed] = 0;
     return;
   }
 
