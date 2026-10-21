@@ -261,12 +261,17 @@ do {                                             \
 
 // -----------------------------------------------------------------------------
 //
-// pushFloat -
+// pushFloat - rendered aside, then copied: corFloatTrim writes the untrimmed number first (%.9f, up to 31
+// bytes) and trims it after, and the output buffer has room for the trimmed one only - its size is
+// corJsonFastRenderSize's, which counts the trimmed length
 //
 #define pushFloat(bP, f)                                       \
 do {                                                           \
-  corFloatTrim(&bP->buf[bP->bytesUsed], f);                   \
-  bP->bytesUsed += strlen(&bP->buf[bP->bytesUsed]);           \
+  char number[32];                                             \
+  corFloatTrim(number, f);                                     \
+  int nLen = strlen(number);                                   \
+  memcpy(&bP->buf[bP->bytesUsed], number, nLen);               \
+  bP->bytesUsed += nLen;                                       \
 } while (0)
 
 
