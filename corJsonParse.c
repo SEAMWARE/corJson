@@ -310,6 +310,7 @@ static bool depthEnter(CorJson* corJsonP)
     return true;
 
   corJsonErrorStringSet(corJsonP, "JSON Parse Error: nested deeper than 100 levels");
+  corJsonP->status = CorJsonMaxDepthExceeded;
   COR_E("%s", corJsonP->errorString);
   COR_JSON_ERR(corJsonP, 0);
   return false;
@@ -824,6 +825,7 @@ static CorNode* corJsonParseMember(CorJson* corJsonP, CorNode* objectP)
     nodeP = (CorNode*) corAlloc(corJsonP->kallocP, sizeof(CorNode));
     if (nodeP == NULL)
     {
+      corJsonP->status = CorJsonAllocError;
       corJsonErrorStringSet(corJsonP, "JSON Parse Error: out of memory");
       return NULL;
     }
@@ -917,6 +919,7 @@ static CorNode* corJsonParseArrayMember(CorJson* corJsonP, CorNode* arrayP)
     nodeP = (CorNode*) corAlloc(corJsonP->kallocP, sizeof(CorNode));
     if (nodeP == NULL)
     {
+      corJsonP->status = CorJsonAllocError;
       corJsonErrorStringSet(corJsonP, "JSON Parse Error: out of memory");
       return NULL;
     }
@@ -1104,13 +1107,21 @@ CorNode* corJsonParse(CorJson* corJsonP, char* json)
 {
   COR_T(CorJsonTlParse, "Parsing '%s'", json);
 
+  corJsonP->status = CorJsonOk;
+
   if ((json == NULL) || (*json == 0))
+  {
+    corJsonP->status = CorJsonParseError;
     COR_RE(NULL, "no json buffer");
+  }
 
   CorNode*  top = (CorNode*) corAlloc(corJsonP->kallocP, sizeof(CorNode));
 
   if (top == NULL)
+  {
+    corJsonP->status = CorJsonAllocError;
     COR_RE(NULL, "out of memory");
+  }
 
   memset(top, 0, sizeof(CorNode));
 
@@ -1171,6 +1182,9 @@ CorNode* corJsonParse(CorJson* corJsonP, char* json)
   //
   if (top == NULL)
   {
+    if (corJsonP->status == CorJsonOk)
+      corJsonP->status = CorJsonParseError;
+
     COR_JSON_ERR(corJsonP, 1);
     return NULL;
   }
@@ -1181,6 +1195,7 @@ CorNode* corJsonParse(CorJson* corJsonP, char* json)
   EAT_WHITESPACE(corJsonP->jsonP);
   if (*corJsonP->jsonP != 0)
   {
+    corJsonP->status = CorJsonParseError;
     corJsonErrorStringSet(corJsonP, "garbage after document end: ");
     size_t len = strlen(corJsonP->errorString);
     snprintf(&corJsonP->errorString[len], sizeof(corJsonP->errorString) - len, "'%c'", *corJsonP->jsonP);

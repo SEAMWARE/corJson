@@ -31,7 +31,11 @@ corJsonRender(corJsonP, treeP, out);                     // honours corJsonConfi
 
 On a parse error `corJsonParse` returns NULL, with the reason in
 `corJsonP->errorString`, the position in `corJsonP->errorPos` and the line in
-`corJsonP->lineNo`.
+`corJsonP->lineNo`. `corJsonP->status` says what kind of failure it was:
+`CorJsonMaxDepthExceeded` for a document nested deeper than 100 levels (arrays
+and objects, the top-level container is level 1 - the document itself may be
+valid JSON), `CorJsonAllocError` when the allocator ran out, `CorJsonParseError`
+for anything else. After a successful parse it is `CorJsonOk`.
 
 ## The tool
 
