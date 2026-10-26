@@ -298,6 +298,27 @@ static bool corJsonUnescapeChar(CorJson* corJsonP, char** writePP)
 
 // -----------------------------------------------------------------------------
 //
+// depthEnter - a container entered: refused deeper than 100 levels
+//
+// Every walk of a tree is recursive - this parser, the NGSI-LD checks, expansion, rendering, freeing - and a
+// request runs on a coroutine stack of 256 KiB. Without a limit, one request of nested brackets well under
+// --maxRequestSize took the broker down. 100 levels is far beyond any NGSI-LD payload.
+//
+static bool depthEnter(CorJson* corJsonP)
+{
+  if (++corJsonP->depth <= 100)
+    return true;
+
+  corJsonErrorStringSet(corJsonP, "JSON Parse Error: nested deeper than 100 levels");
+  COR_E("%s", corJsonP->errorString);
+  COR_JSON_ERR(corJsonP, 0);
+  return false;
+}
+
+
+
+// -----------------------------------------------------------------------------
+//
 // corJsonParseValue -
 //
 static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSON_IN_ARRAY_AS_PARAM)
@@ -616,7 +637,8 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
     ++corJsonP->jsonP;
 
     COR_JSON_SAX(corJsonP, CorJsonObjectStart, nodeP->name, NULL, inArray);
-    ++corJsonP->depth;
+    if (depthEnter(corJsonP) == false)
+      return CorJsonMaxDepthExceeded;
     if (corJsonParseObject(corJsonP, nodeP COR_JSON_IN_ARRAY) != NULL)
     {
       --corJsonP->depth;
@@ -632,7 +654,8 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
     ++corJsonP->jsonP;
 
     COR_JSON_SAX(corJsonP, CorJsonArrayStart, nodeP->name, NULL, inArray);
-    ++corJsonP->depth;
+    if (depthEnter(corJsonP) == false)
+      return CorJsonMaxDepthExceeded;
     if (corJsonParseArray(corJsonP, nodeP COR_JSON_IN_ARRAY) != NULL)
     {
       --corJsonP->depth;
