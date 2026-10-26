@@ -658,7 +658,7 @@ int main(int argC, char* argV[])
   // stand up a per-component registry. corLog has one: the owner says where
   // output goes, and the libraries just trace by number.
   //
-  if (corLogInit(progName, NULL, true, NULL, NULL, false, false, false) != 0)
+  if (corLogInit(progName, NULL, true, NULL, NULL, false, false) != 0)
     COR_RE(1, "corLogInit failed");
 
   CorJson  kjson;
