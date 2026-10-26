@@ -117,6 +117,8 @@ typedef struct CorJson
   int             lineNo;            // Contains the line number of the erroneous line
   int             errorPos;          // Contains the position in the buffer where the error was detected
   char            errorString[256];  // description of the latest error
+  CorJsonStatus   status;            // why the latest corJsonParse failed: CorJsonMaxDepthExceeded, CorJsonAllocError,
+                                     // else CorJsonParseError - CorJsonOk when it succeeded
   bool           errorReported;     // To avoid reporting an error more than once (different levels in src code)
 
   // Callbacks
