@@ -43,7 +43,6 @@
 //   CorJsonConfigObjectsOnOneLine
 //   CorJsonConfigShortObjectsOnOneLine
 //   CorJsonConfigMinimized
-//   CorJsonConfigNumbersAsStrings
 //   CorJsonConfigUnsorted
 //   CorJsonConfigSorted
 //   CorJsonConfigSortedReverse
@@ -66,7 +65,6 @@ typedef enum CorJsonConfigItem
   CorJsonConfigObjectsOnOneLine,
   CorJsonConfigShortObjectsOnOneLine,
   CorJsonConfigMinimized,
-  CorJsonConfigNumbersAsStrings,
   CorJsonConfigUnsorted,
   CorJsonConfigSorted,
   CorJsonConfigSortedReverse,
