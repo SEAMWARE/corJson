@@ -155,7 +155,6 @@ typedef struct CorJson
   bool           shortArraysOnOneLine;         // no newlines when rendering 'short arrays'
   bool           objectsOnOneLine;             // no newlines when rendering objects
   bool           shortObjectsOnOneLine;        // no newlines when rendering 'short objects'
-  bool           numbersAsStrings;             // to avoid rounding errors when just beautifying
   bool           spaceAfterComma;              // put a space after comma (only if no newline)
   int             shortArrayMaxLen;             // max render-len for an array to be considered 'short'
   int             shortObjectMaxLen;            // max render-len for an object to be considered 'short'

@@ -34,7 +34,7 @@ CorJsonStatus corJsonConfig(CorJson* corJsonP, CorJsonConfigItem item, char* val
     corJsonP->saxF = (CorJsonSaxFunction) value;
 #else
     corJsonP->saxF = (CorJsonSaxFunction) NULL;
-    corJsonErrorStringSet(corJsonP, "Sax functionality is not included in this build. Please reconfigure kjson and rebuild");
+    corJsonErrorStringSet(corJsonP, "Sax functionality is not included in this build. Please reconfigure corJson and rebuild");
     return CorJsonBadParam;
 #endif
     break;
@@ -124,13 +124,6 @@ CorJsonStatus corJsonConfig(CorJson* corJsonP, CorJsonConfigItem item, char* val
     corJsonP->stringAfterColon            = "";
     corJsonP->objectStartBracketOnNewLine = false;
     corJsonP->arrayStartBracketOnNewLine  = false;
-    break;
-
-  case CorJsonConfigNumbersAsStrings:
-    if      (value  == NULL)   corJsonP->numbersAsStrings = false;
-    else if (*value == 0)      corJsonP->numbersAsStrings = false;
-    else if (*value == 'Y')    corJsonP->numbersAsStrings = true;
-    else                       corJsonP->numbersAsStrings = false;
     break;
 
   case CorJsonConfigUnsorted:

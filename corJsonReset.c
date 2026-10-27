@@ -50,7 +50,6 @@ CorJsonStatus corJsonReset(CorJson* corJsonP)
   corJsonP->stringAfterColon             = COR_JSON_DEFAULT_STRING_AFTER_COLON;
   corJsonP->objectStartBracketOnNewLine  = COR_JSON_DEFAULT_OBJECT_START_BRACKET_ON_NEW_LINE;
   corJsonP->arrayStartBracketOnNewLine   = COR_JSON_DEFAULT_ARRAY_START_BRACKET_ON_NEW_LINE;
-  corJsonP->numbersAsStrings             = COR_JSON_DEFAULT_NUMBERS_AS_STRINGS;
   corJsonP->spaceAfterComma              = false;  // Only used temporarily in short arrays/objects on single line
   corJsonP->shortArrayMaxLen             = COR_JSON_DEFAULT_SHORT_ARRAY_MAX_LEN;
   corJsonP->shortObjectMaxLen            = COR_JSON_DEFAULT_SHORT_OBJECT_MAX_LEN;

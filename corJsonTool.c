@@ -83,7 +83,7 @@ typedef enum TestTraceLevel
 //
 // progName -
 //
-char* progName = "kjson";
+char* progName = "corJson";
 
 
 
@@ -108,7 +108,6 @@ char*   jsonFile                  = NULL;
 bool   sortAlphabetically        = false;
 bool   sortAlphabeticallyReverse = false;
 bool   verbose                   = false;
-bool   parseNumbers              = false;
 bool   binRoundTrip              = false;
 bool   binStats                  = false;
 char*   shortArrayMaxLen          = NULL;
@@ -176,7 +175,6 @@ static void usage(void)
          "%s [-sool (short objects (80 rendered chars) on one line)\n"
          "%s [-soml <len> (change the length for an object to be considered short - 80 is default)]\n"
          "%s [-min (minimized - no whitespace at all)]\n"
-         "%s [-pn (do parse numbers)]\n"
          "%s [-sr (output to stderr)]\n"
          "%s [-o <output file>]\n"
          "%s [-sort (sort object members alphabetically)]\n"
@@ -187,7 +185,7 @@ static void usage(void)
          "%s <json-file>\n",
          progName,
          empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty,
-         empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty);
+         empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty);
 
   exit(CorJsonXUsage);
 }
@@ -314,8 +312,6 @@ void parseArgs(int argC, char* argV[])
       objectsOnOneLine = true;
     else if (strcmp(argV[ix], "-sool") == 0)
       shortObjectsOnOneLine = true;
-    else if (strcmp(argV[ix], "-pn") == 0)
-      parseNumbers = true;
     else if (strcmp(argV[ix], "-bin") == 0)
       binRoundTrip = true;
     else if (strcmp(argV[ix], "-binStats") == 0)
@@ -649,7 +645,7 @@ char kallocBuffer[128 * 1024];
 //
 int main(int argC, char* argV[])
 {
-  char*         progName = "kjson";
+  char*         progName = "corJson";
 
   //
   // Initialize the trace library.
@@ -757,26 +753,6 @@ int main(int argC, char* argV[])
 
   if (shortObjectMaxLen != NULL)
     corJsonConfig(corJsonP, CorJsonConfigShortObjectMaxLen, shortObjectMaxLen);
-
-  //
-  // Special treatment for numbers when beautifying
-  // Numbers aren't parsed, calculated and stored as an int/float.
-  // Instead, the chars representing the numbers are pointer to at a string
-  // and when rendering the 'Number', its string representation is rendered instead.
-  // This way we have 0 problems with rounding errors and the parsing stage is faster too.
-  // Only down-side is that overflows will not be detected.
-  // Perhaps this not a bad thing. Not the beautifiers job to check for overflow ...
-  //
-  // Now, to tell kjson to NOT parse numbers, corJsonConfig is called with
-  // 'CorJsonConfigNumbersAsStrings' set to 'Yes'.
-  //
-  //
-  // -bin: numbers must be numbers - a number kept as its text has no binary form
-  //
-  if ((parseNumbers == false) && (binRoundTrip == false))
-    corJsonConfig(corJsonP, CorJsonConfigNumbersAsStrings, "Yes");
-  else
-    corJsonConfig(corJsonP, CorJsonConfigNumbersAsStrings, "No");
 
   if (sortAlphabetically == true)
     corJsonConfig(corJsonP, CorJsonConfigSorted, NULL);

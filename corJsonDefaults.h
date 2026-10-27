@@ -30,7 +30,6 @@
 #define  COR_JSON_DEFAULT_STRING_AFTER_COLON                   " ";
 #define  COR_JSON_DEFAULT_OBJECT_START_BRACKET_ON_NEW_LINE     false
 #define  COR_JSON_DEFAULT_ARRAY_START_BRACKET_ON_NEW_LINE      false
-#define  COR_JSON_DEFAULT_NUMBERS_AS_STRINGS                   false    // TRUE only when beautifying
 #define  COR_JSON_DEFAULT_SHORT_ARRAY_MAX_LEN                  80
 #define  COR_JSON_DEFAULT_SHORT_OBJECT_MAX_LEN                 80
 #define  COR_JSON_DEFAULT_ADD_METHOD                           NULL      // inline append

@@ -67,6 +67,7 @@
 #define _GNU_SOURCE                                // strtod_l, newlocale
 #endif
 #include <limits.h>                                // LLONG_MAX
+#include <math.h>                                  // isinf
 #include <locale.h>                                // newlocale, locale_t
 #include <pthread.h>                               // pthread_once
 #include <stdio.h>                                 // snprintf
@@ -396,7 +397,6 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
     return CorJsonOk;
 
   case '-':
-  case '+':
   case '0':
   case '1':
   case '2':
@@ -407,63 +407,82 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
   case '7':
   case '8':
   case '9':
-#if 0
   {
-    char* endP;
-    nodeP->value.f = strtof(corJsonP->jsonP, &endP);
-    corJsonP->jsonP = endP;
-  }
-#else
     //
-    // Parsing a NUMBER
-    //   +/- 123
-    //       2.345
-    //       12E54
-    //       1.09E12
+    // Parsing a NUMBER - RFC 8259 § 6:  [ "-" ] int [ frac ] [ exp ]
+    //   int   = "0" / ( digit1-9 *DIGIT )
+    //   frac  = "." 1*DIGIT
+    //   exp   = ( "e" / "E" ) [ "-" / "+" ] 1*DIGIT
     //
-    // ToDo:
-    //   If only for presentation (json beautifier), just keep the string as is, no conversion necessary
+    // No '+' before a number, at least one digit after a '-' and after a '.'.
     //
+    // An INTEGER has no '.', an exponent only if it is positive and the result still fits a long long
+    // (5e3 is 5000; 5e-3 is 0.005, a float). An integer that does not fit a long long is a FLOAT, as 5e30.
+    //
+    // A FLOAT is the double nearest to its text, as strtod's. Its digits read as one integer, the
+    // significand, exact below 2^53 - then one division by an exact power of ten (up to 1e22) is
+    // correctly rounded. Anything else - an exponent, more digits, more decimals - goes to strtod.
+    // A float past the range of a double (1e400) is refused: it has no JSON rendering.
+    //
+    static const double pow10[] = {
+      1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11,
+      1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22
+    };
 
     COR_T(CorJsonTlParseValue, "Parsing a number: %s", corJsonP->jsonP);
 
-    long long      ipart       = 0;  // integer part
-    long long      fpart       = 0;  // fraction part (if float)
-    unsigned int   fdiv        = 0;  // number of decimals
-    long long      epart       = 0;  // exponential
-    long long      expo        = 1;
-    int            sign        = 1;
-    bool          isFloat     = false;
-    bool          hasExponent = false;
-    char*          numberText  = corJsonP->jsonP;  // For strtod_l, if it turns out to have an exponent
+    char*               numberText  = corJsonP->jsonP;  // For strtod_l
+    bool                negative    = false;
+    unsigned long long  ipart       = 0;      // the integer part, while it fits a long long
+    bool                ipartFits   = true;
+    unsigned long long  sig         = 0;      // every digit, integer part and fraction, while exact in a double
+    bool                sigExact    = true;
+    unsigned int        fdiv        = 0;      // number of decimals
+    long long           epart       = 0;      // the exponent, saturated at 100000 - a double is inf or 0 long before
+    int                 esign       = 1;
+    long long           expo        = 1;
+    bool                isFloat     = false;
+    bool                hasExponent = false;
 
-    // Sign
-    if (*corJsonP->jsonP == '0')
+    if (*corJsonP->jsonP == '-')
     {
-      // Hex, or just leading zero?
-      if ((corJsonP->jsonP[1] == 'x') || (corJsonP->jsonP[1] == 'X'))
-      {
-        corJsonErrorStringSet(corJsonP, "JSON Parse Error: hex numbers are not admitted");
-        COR_JSON_ERR(corJsonP, 1);
-        return CorJsonParseError;
-      }
-    }
-    else if (*corJsonP->jsonP == '-')
-    {
-      sign = -1;
-      ++corJsonP->jsonP;
-    }
-    else if (*corJsonP->jsonP == '+')
-    {
+      negative = true;
       ++corJsonP->jsonP;
     }
 
-    // 1. int part
     char* intStart = corJsonP->jsonP;
+
+    if ((*intStart == '0') && ((intStart[1] == 'x') || (intStart[1] == 'X')))
+    {
+      corJsonErrorStringSet(corJsonP, "JSON Parse Error: hex numbers are not admitted");
+      COR_JSON_ERR(corJsonP, 1);
+      return CorJsonParseError;
+    }
+
+    if ((*intStart < '0') || (*intStart > '9'))
+    {
+      corJsonErrorStringSet(corJsonP, "JSON Parse Error: invalid number - no digits");
+      COR_JSON_ERR(corJsonP, 1);
+      return CorJsonParseError;
+    }
+
+    // 1. int part - the most negative long long has one more than the most positive
+    unsigned long long ipartMax = (negative == true)? (unsigned long long) LLONG_MAX + 1 : (unsigned long long) LLONG_MAX;
 
     while ((*corJsonP->jsonP >= '0') && (*corJsonP->jsonP <= '9'))
     {
-      ipart = (ipart * 10) + (*corJsonP->jsonP - '0');
+      unsigned int digit = *corJsonP->jsonP - '0';
+
+      if ((ipartFits == true) && (ipart > (ipartMax - digit) / 10))
+        ipartFits = false;
+      else if (ipartFits == true)
+        ipart = (ipart * 10) + digit;
+
+      if ((sigExact == true) && (sig > (9007199254740992ULL - digit) / 10))  // 2^53
+        sigExact = false;
+      else if (sigExact == true)
+        sig = (sig * 10) + digit;
+
       ++corJsonP->jsonP;
     }
 
@@ -476,8 +495,9 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
       COR_JSON_ERR(corJsonP, 1);
       return CorJsonParseError;
     }
-    COR_T(CorJsonTlParseValue, "Got int-part: %lld", ipart);
+    COR_T(CorJsonTlParseValue, "Got int-part: %llu (fits a long long: %s)", ipart, (ipartFits == true)? "yes" : "no");
 
+    // 2. fraction
     if (*corJsonP->jsonP == '.')
     {
       COR_T(CorJsonTlParseValue, "Got dot");
@@ -485,25 +505,30 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
       isFloat = true;
       ++corJsonP->jsonP;
 
-      // This here gives an error: 0.89000000000000001332
-      // 20 decimals ...
-      // Let's allow only 12 decimals
-      //
-      int decimals = 0;
+      if ((*corJsonP->jsonP < '0') || (*corJsonP->jsonP > '9'))
+      {
+        corJsonErrorStringSet(corJsonP, "JSON Parse Error: invalid number - no digits after the decimal point");
+        COR_JSON_ERR(corJsonP, 1);
+        return CorJsonParseError;
+      }
+
       while ((*corJsonP->jsonP >= '0') && (*corJsonP->jsonP <= '9'))
       {
-        if (decimals < 12)
-        {
-          fpart = (fpart * 10) + (*corJsonP->jsonP - '0');
-          fdiv++;
-        }
-        ++decimals;
+        unsigned int digit = *corJsonP->jsonP - '0';
+
+        if ((sigExact == true) && (sig > (9007199254740992ULL - digit) / 10))
+          sigExact = false;
+        else if (sigExact == true)
+          sig = (sig * 10) + digit;
+
+        if (fdiv <= 22)
+          ++fdiv;
         ++corJsonP->jsonP;
       }
-      COR_T(CorJsonTlParseValue, "GOT fraction part: %lld (fdiv=%d)", fpart, fdiv);
+      COR_T(CorJsonTlParseValue, "Got fraction: significand %llu (exact: %s), fdiv=%u", sig, (sigExact == true)? "yes" : "no", fdiv);
     }
 
-    int esign = 1;
+    // 3. exponent
     if ((*corJsonP->jsonP == 'E') || (*corJsonP->jsonP == 'e'))
     {
       COR_T(CorJsonTlParseValue, "GOT E/e");
@@ -522,7 +547,8 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
       char* eStart = corJsonP->jsonP;
       while ((*corJsonP->jsonP >= '0') && (*corJsonP->jsonP <= '9'))
       {
-        epart = (epart * 10) + (*corJsonP->jsonP - '0');
+        if (epart < 100000)
+          epart = (epart * 10) + (*corJsonP->jsonP - '0');
         ++corJsonP->jsonP;
       }
       if (eStart == corJsonP->jsonP)
@@ -533,103 +559,69 @@ static CorJsonStatus corJsonParseValue(CorJson* corJsonP, CorNode* nodeP COR_JSO
       }
     }
 
+    if (ipartFits == false)
+      isFloat = true;
+    else if (hasExponent == true)
     {
-      //
-      // An exponent makes the number a FLOAT unless it is positive and the result still fits in
-      // an integer: 5e3 is 5000, but 5e-3 is 0.005, and 5e30 does not fit a long long.
-      // (The integer branch used to ignore the exponent's sign - 5e-3 came out as 5000 - and
-      // 'expo', a long long, silently overflowed past e18, for floats as well.)
-      //
-      if (hasExponent == true)
+      COR_T(CorJsonTlParseValue, "epart=%lld, esign=%d", epart, esign);
+
+      if ((isFloat == false) && (esign == 1) && (epart <= 18))
       {
-        COR_T(CorJsonTlParseValue, "epart=%lld, esign=%d", epart, esign);
+        unsigned long long limit = ipartMax;
 
-        if ((isFloat == false) && (esign == 1) && (epart <= 18))
+        for (long long ix = 0; ix < epart; ix++)
         {
-          long long limit = LLONG_MAX;
-
-          for (long long ix = 0; ix < epart; ix++)
-          {
-            expo  *= 10;
-            limit /= 10;
-          }
-
-          if (ipart > limit)  // ipart * 10^epart would overflow
-            isFloat = true;
+          expo  *= 10;
+          limit /= 10;
         }
-        else
+
+        if (ipart > limit)  // ipart * 10^epart would overflow
           isFloat = true;
       }
+      else
+        isFloat = true;
+    }
 
-      if (isFloat == true)
+    if (isFloat == true)
+    {
+      double f;
+
+      nodeP->type = CorFloat;
+
+      if ((hasExponent == false) && (sigExact == true) && (fdiv <= 22))
       {
-        //
-        // Precomputed powers of 10 for fast float assembly
-        // Using multiplication instead of division: significand * pow10[-(fdiv - epart)]
-        //
-        static const double pow10neg[] = {
-          1e0,   1e-1,  1e-2,  1e-3,  1e-4,  1e-5,  1e-6,  1e-7,  1e-8,  1e-9,
-          1e-10, 1e-11, 1e-12, 1e-13, 1e-14, 1e-15, 1e-16, 1e-17, 1e-18, 1e-19,
-          1e-20, 1e-21, 1e-22
-        };
-
-        COR_T(CorJsonTlParseValue, "Parsing a FLOAT (numbersAsStrings == false)");
-
-        //
-        // Combine integer and fractional parts into one significand
-        // E.g. for -65.613616999999: ipart=65, fpart=613616999999, fdiv=12
-        //   significand = 65 * 10^12 + 613616999999 = 65613616999999
-        //   Then multiply by 10^(-12) to get the final value
-        //
-        // Adjust exponent: net exponent = epart*esign - fdiv
-        //
-        nodeP->type = CorFloat;
-
-        if (hasExponent == true)
-        {
-          //
-          // With an exponent, the assembly below is no longer exact: past 1e22 a power of ten is not
-          // representable in a double, and the error piles up. strtod is correctly rounded. The text
-          // was validated by the scan above, and strtod stops where the JSON number stops.
-          //
-          pthread_once(&cLocaleOnce, cLocaleCreate);
-          nodeP->value.f = (cLocaleP != (locale_t) 0)? strtod_l(numberText, NULL, cLocaleP) : strtod(numberText, NULL);
-        }
-        else
-        //
-        // Convert fractional part to double using a single table lookup
-        // instead of the old switch/loop with repeated divisions.
-        // Then combine: value = sign * (ipart + fpart * pow10neg[fdiv]) * expo
-        //
-        {
-          double f;
-
-          if (fdiv <= 22)
-            f = (double) fpart * pow10neg[fdiv];
-          else
-          {
-            // Very many decimals: chain two lookups
-            f = (double) fpart * pow10neg[22];
-            unsigned int remaining = fdiv - 22;
-            while (remaining > 22) { f *= pow10neg[22]; remaining -= 22; }
-            f *= pow10neg[remaining];
-          }
-
-          nodeP->value.f = sign * (ipart + f);  // No exponent here - see above
-        }
-
-        COR_T(CorJsonTlParseValue, "Parsed a FLOAT value '%f' for '%s' at %p", nodeP->value.f, nodeP->name, nodeP);
-        COR_JSON_SAX(corJsonP, CorJsonFloatValue, nodeP->name, &nodeP->value, inArray);
+        f = (double) sig / pow10[fdiv];
+        if (negative == true)
+          f = -f;
       }
       else
       {
-        nodeP->type     = CorInt;
-        nodeP->value.i  = sign * ipart * expo;
-        COR_T(CorJsonTlParseValue, "Parsed an INTEGER value '%lld' for '%s' at %p", nodeP->value.i, nodeP->name, nodeP);
-        COR_JSON_SAX(corJsonP, CorJsonIntegerValue, nodeP->name, &nodeP->value, inArray);
+        pthread_once(&cLocaleOnce, cLocaleCreate);
+        f = (cLocaleP != (locale_t) 0)? strtod_l(numberText, NULL, cLocaleP) : strtod(numberText, NULL);
       }
+
+      if (isinf(f))
+      {
+        corJsonP->jsonP = numberText;
+        corJsonErrorStringSet(corJsonP, "JSON Parse Error: number out of range");
+        COR_JSON_ERR(corJsonP, 1);
+        return CorJsonParseError;
+      }
+
+      nodeP->value.f = f;
+      COR_T(CorJsonTlParseValue, "Parsed a FLOAT value '%f' for '%s' at %p", nodeP->value.f, nodeP->name, nodeP);
+      COR_JSON_SAX(corJsonP, CorJsonFloatValue, nodeP->name, &nodeP->value, inArray);
     }
-#endif
+    else
+    {
+      unsigned long long u = ipart * (unsigned long long) expo;  // checked above: at most ipartMax
+
+      nodeP->type     = CorInt;
+      nodeP->value.i  = (negative == true)? (long long) (0ULL - u) : (long long) u;
+      COR_T(CorJsonTlParseValue, "Parsed an INTEGER value '%lld' for '%s' at %p", nodeP->value.i, nodeP->name, nodeP);
+      COR_JSON_SAX(corJsonP, CorJsonIntegerValue, nodeP->name, &nodeP->value, inArray);
+    }
+  }
     return CorJsonOk;
 
   case '{':  // JSON Object
