@@ -23,7 +23,7 @@
 static int countIntSize(long long i)
 {
   int                chars  = (i < 0)? 1 : 0;
-  unsigned long long ui     = (i < 0)? -i : i;
+  unsigned long long ui     = (i < 0)? 0ULL - (unsigned long long) i : (unsigned long long) i;  // NOT -i: LLONG_MIN has no positive long long
 
   while (ui > 9)  // NOT "> 10" - that stops one division early whenever ui divides down to exactly 10 (10, 100-109, 1000-1099, ...)
   {
